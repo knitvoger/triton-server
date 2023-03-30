@@ -69,8 +69,8 @@ from inspect import getsourcefile
 TRITON_VERSION_MAP = {
     '2.33.0dev': (
         '23.04dev',  # triton container
-        '23.03',  # upstream container
-        '1.14.1',  # ORT
+        '23.02',  # upstream container
+        '1.12.0',  # ORT
         '2022.1.0',  # ORT OpenVINO
         '2022.1.0',  # Standalone OpenVINO
         '2.2.9',  # DCGM version
@@ -648,7 +648,11 @@ def pytorch_cmake_args(images):
 def onnxruntime_cmake_args(images, library_paths):
     cargs = [
         cmake_backend_arg('onnxruntime', 'TRITON_BUILD_ONNXRUNTIME_VERSION',
-                          None, TRITON_VERSION_MAP[FLAGS.version][2])
+                          None, TRITON_VERSION_MAP[FLAGS.version][2]),
+        cmake_backend_arg('onnxruntime', 'TRITON_BUILD_CUDA_HOME',
+                          None, '/usr/local/cuda/'),
+        cmake_backend_arg('onnxruntime', 'TRITON_BUILD_CUDNN_HOME',
+                          None, '/usr/lib/x86_64-linux-gnu/')
     ]
 
     # TRITON_ENABLE_GPU is already set for all backends in backend_cmake_args()
@@ -941,7 +945,7 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-      cmake-data=3.25.2-0kitware1ubuntu20.04.1 cmake=3.25.2-0kitware1ubuntu20.04.1
+      cmake-data=3.21.1-0kitware1ubuntu20.04.1 cmake=3.21.1-0kitware1ubuntu20.04.1
 '''
 
         if FLAGS.enable_gpu:
@@ -1184,10 +1188,10 @@ COPY --from=min_container /usr/local/cuda/lib64/stubs/libcublasLt.so /usr/local/
 COPY --from=min_container /usr/local/cuda/lib64/stubs/libcublasLt.so /usr/local/cuda/lib64/stubs/libcublasLt.so.11
 
 RUN mkdir -p /usr/local/cuda/targets/{cuda_arch}-linux/lib
-COPY --from=min_container /usr/local/cuda-12.1/targets/{cuda_arch}-linux/lib/libcudart.so.12 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
-COPY --from=min_container /usr/local/cuda-12.1/targets/{cuda_arch}-linux/lib/libcupti.so.12 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
-COPY --from=min_container /usr/local/cuda-12.1/targets/{cuda_arch}-linux/lib/libnvToolsExt.so.1 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
-COPY --from=min_container /usr/local/cuda-12.1/targets/{cuda_arch}-linux/lib/libnvJitLink.so.12 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
+COPY --from=min_container /usr/local/cuda/targets/{cuda_arch}-linux/lib/libcudart.so.12 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
+COPY --from=min_container /usr/local/cuda/targets/{cuda_arch}-linux/lib/libcupti.so.12 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
+COPY --from=min_container /usr/local/cuda/targets/{cuda_arch}-linux/lib/libnvToolsExt.so.1 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
+COPY --from=min_container /usr/local/cuda/targets/{cuda_arch}-linux/lib/libnvJitLink.so.12 /usr/local/cuda/targets/{cuda_arch}-linux/lib/.
 
 COPY --from=min_container /usr/lib/{libs_arch}-linux-gnu/libcudnn.so.8 /usr/lib/{libs_arch}-linux-gnu/libcudnn.so.8
 
@@ -1740,9 +1744,7 @@ def finalize_build(cmake_script, install_dir, ci_dir):
 def enable_all():
     if target_platform() != 'windows':
         all_backends = [
-            'ensemble', 'identity', 'square', 'repeat', 'tensorflow1',
-            'tensorflow2', 'onnxruntime', 'python', 'dali', 'pytorch',
-            'openvino', 'fil', 'tensorrt'
+            'ensemble', 'identity', 'square', 'repeat', 'onnxruntime', 'python', 'pytorch', 'tensorrt'
         ]
         all_repoagents = ['checksum']
         # DLIS-4491: Add redis cache to build
