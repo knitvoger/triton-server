@@ -605,7 +605,11 @@ def pytorch_cmake_args(images):
 def onnxruntime_cmake_args(images, library_paths):
     cargs = [
         cmake_backend_arg('onnxruntime', 'TRITON_BUILD_ONNXRUNTIME_VERSION',
-                          None, TRITON_VERSION_MAP[FLAGS.version][2])
+                          None, TRITON_VERSION_MAP[FLAGS.version][2]),
+        cmake_backend_arg('onnxruntime', 'TRITON_BUILD_CUDA_HOME',
+                          None, '/usr/local/cuda/'),
+        cmake_backend_arg('onnxruntime', 'TRITON_BUILD_CUDNN_HOME',
+                          None, '/usr/lib/x86_64-linux-gnu/')
     ]
 
     # TRITON_ENABLE_GPU is already set for all backends in backend_cmake_args()
@@ -1634,9 +1638,9 @@ def finalize_build(cmake_script, install_dir, ci_dir):
 def enable_all():
     if target_platform() != 'windows':
         all_backends = [
-            'ensemble', 'identity', 'square', 'repeat', 'tensorflow1',
-            'tensorflow2', 'onnxruntime', 'python', 'dali', 'pytorch',
-            'openvino', 'fil', 'tensorrt'
+            'ensemble', 'identity', 'square', 'repeat', 
+            'onnxruntime', 'python', 'pytorch',
+            'tensorrt'
         ]
         all_repoagents = ['checksum']
         all_filesystems = ['gcs', 's3', 'azure_storage']
